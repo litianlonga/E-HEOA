@@ -30,5 +30,6 @@ Use Python 3.9 environment with Anaconda. Detailed configuration is as follows:
 | Keras         | 2.10.0  |
 | scikit-learn  | 1.0.2   |
 | NumPy         | 1.21.5  |
+
 This experiment was conducted in a CPU environment with an ADM Ryzen 7 5800HS Creator Edition, equipped with 40GB of RAM and an NVIDIA GeForce MX450 GPU.
 
