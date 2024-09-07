@@ -1,1 +1,3 @@
-# HEOA and ESOA
+# Improvements and Integration of HEOA and ESOA
+
+Based on the Human Evolutionary Optimization Algorithm (HEOA) and the Egret Swarm Optimization Algorithm (ESOA), we respectively made improvements using Cauchy mutation and Gaussian mutation to enhance the search efficiency and accuracy of the algorithms. The improved HEOA and ESOA were then used to optimize the hyperparameters (Dropout and learning-rate) of the E-HEOA model. Subsequently, an E-HEOA model was trained separately on the CIKM AnalytuCup 2017 Dataset. Finally, the E-HEOA models trained by HEOA and ESOA were combined based on their weights.
