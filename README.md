@@ -6,8 +6,7 @@ Based on the Human Evolutionary Optimization Algorithm (HEOA) and the Egret Swar
 The HKO-7 dataset is a collection of meteorological data from the Hong Kong region, including several radar images taken every 6 minutes. For this study, we selected 10 days' worth of data, totaling 2,400 radar images, to train the E-HEOA model.
 # Sample dataset
 
-![Radar Image](Sample Dataset/RAD090627151200.png)
-
+![Radar Image](Sample%20Dataset/RAD090627151200.png)
 It contains examples of the dataset
 # Code Files
 
