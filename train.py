@@ -61,16 +61,16 @@ model_param = {
     "label": y_train
 }
 OA_param = {
-    "size_pop": 4,
+    "size_pop": 100,
     "n_dim": 2,
-    "max_iter": 2,
+    "max_iter": 8,
     "lb":np.array([0.1, 0.0001]),
     "ub":np.array([0.5, 0.01])
 }
-# # 人类进化优化算法（加变异）
+
 # heoa = HEOA(model_param, OA_param)
 # best_learn_rate,dropout, best_err = heoa.run()
-# 白鹭群优化算法（加变异）
+
 esoa = ESOA(model_param, OA_param)
 best_learn_rate,dropout, best_err = esoa.run()
 
