@@ -63,7 +63,7 @@ model_param = {
 OA_param = {
     "size_pop": 100,
     "n_dim": 2,
-    "max_iter": 8,
+    "max_iter": 150,
     "lb":np.array([0.1, 0.0001]),
     "ub":np.array([0.5, 0.01])
 }
