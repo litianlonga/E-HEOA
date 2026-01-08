@@ -68,11 +68,10 @@ OA_param = {
     "ub":np.array([0.5, 0.01])
 }
 
-# heoa = HEOA(model_param, OA_param)
-# best_learn_rate,dropout, best_err = heoa.run()
-
-esoa = ESOA(model_param, OA_param)
-best_learn_rate,dropout, best_err = esoa.run()
+heoa = HEOA(model_param, OA_param)
+best_learn_rate,dropout, best_err = heoa.run()
+# esoa = ESOA(model_param, OA_param)
+# best_learn_rate,dropout, best_err = esoa.run()
 
 
 
@@ -81,8 +80,8 @@ print(dropout)
 model = md.create_model(dropout=dropout)
 model.compile(loss='binary_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=best_learn_rate))
 
-# csv_logger_path = 'LOSS_HEOA.csv'
-csv_logger_path = 'LOSS_ESOA.csv'
+csv_logger_path = 'LOSS_HEOA.csv'
+# csv_logger_path = 'LOSS_ESOA.csv'
 
 csv_logger = CSVLogger(csv_logger_path, append=True, separator=',')
 
@@ -100,5 +99,5 @@ model.fit(
     callbacks=[csv_logger]
 )
 
-# model.save('model_HEOA.h5')
-model.save('model_ESOA.h5')
+model.save('model_HEOA.h5')
+# model.save('model_ESOA.h5')
