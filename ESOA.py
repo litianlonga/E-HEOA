@@ -120,7 +120,7 @@ class ESOA:
             self.now_iter_y_best = y_i[y_i.argmin()]
             print("进行高斯变异")
         #高斯变异
-            self.qi_p_x_best_esoa = self.gaussian_part(self.now_iter_x_best,self.x_global_best)
+            self.qi_p_x_best_esoa = self.gaussian_part(self.now_iter_x_best,i,self.max_iter)
             self.qi_p_y_best_esoa = fit_fun(self.model_param,self.qi_p_x_best_esoa)
             # 二次插值预测值和本次迭代种群最佳值做对比，最好的再拿来跟全局最佳值比，以更新全局最佳值
             n_iter_x_best = self.now_iter_x_best
@@ -154,18 +154,13 @@ class ESOA:
         print(self.y_global_best)
         return self.x_global_best[-1],self.x_global_best[-2], self.y_global_best.min()
 
-
-    def gaussian_part(self,x, xbest, mutation_rate=1):
-        print(x)
-        print(xbest)
-        new_pos = np.copy(x)
-        if np.random.rand() < mutation_rate:
-            sigma = 1
-            sqrt_2pi = np.sqrt(2 * np.pi)
-            gaussian_values = (1 / (sqrt_2pi * sigma)) * np.exp(-((xbest - x) ** 2) / (2 * sigma ** 2))
-            new_pos = np.clip(x * gaussian_values, self.lb, self.ub)
-        return new_pos
-
+    def gaussian_part(self, xbest, t, T, sigma_min=0.1, sigma_max=0.5):
+        # 动态调整sigma
+        sigma = sigma_max - (sigma_max - sigma_min) * t / T
+        noise = np.random.normal(0, sigma, size=self.n_dim)
+        x_new = xbest + xbest * noise
+        x_new = np.clip(x_new, self.lb, self.ub)
+        return x_new
     def checkBound(self, x):
         return np.clip(x, self.lb, self.ub)
 
@@ -194,9 +189,7 @@ class ESOA:
         v = np.tile(v, self.n_dim)
         return v
 
-    # 更新每组小队实际应用梯度的方向
     def gradientEstimate(self, g_temp):
-        # 计算每组小队的实际应用梯度方向，应用了当前位置、小队最佳位置、当前适应度值、小队最佳适应度值
         p_d = self.x_hist_best - self.x
         p_d_sum = p_d.sum(axis=1)
         p_d_sum = self.refill(p_d_sum)
@@ -206,7 +199,6 @@ class ESOA:
         p_d /= (p_d_sum + np.spacing(1)) * (p_d_sum + np.spacing(1))
         d_p = p_d + self.g_hist_best
 
-        # 计算种群最佳的实际应用梯度方向，应用了当前位置、种群最佳位置、当前适应度值、种群最佳适应度值
         c_d = self.x_global_best - self.x
         c_d_sum = c_d.sum(axis=1)
         c_d_sum = self.refill(c_d_sum)
@@ -216,8 +208,6 @@ class ESOA:
         c_d /= (c_d_sum + np.spacing(1)) * (p_d_sum + np.spacing(1))
         d_g = c_d + self.g_global_best
 
-        # 搞三个随机数种子，用于决定在计算实际应用梯度时实际梯度、小队梯度方向、全局梯度方向所占更新比例的权重
-        # (注意这里与原文有些不符合，原文是只搞了两个随机数种子用于决定三个数值所占有更新比例的权重)
         r1 = np.random.random(self.size_pop)
         r1 = self.refill(r1)
         r2 = np.random.random(self.size_pop)
@@ -225,60 +215,46 @@ class ESOA:
         r3 = np.random.random(self.size_pop)
         r3 = self.refill(r3)
 
-        # 根据实际梯度、小队梯度方向、全局梯度方向来更新每组小队实际应用梯度，并做归一化
         self.g = r1 * g_temp + r2 * d_p + r3 * d_g
         g_sum = self.g.sum(axis=1)
         g_sum = self.refill(g_sum)
         self.g /= (g_sum + np.spacing(1))
 
-    # 基于adam更新w参数
     def weightUpdate(self):
         self.m = self.beta1 * self.m + (1 - self.beta1) * self.g
         self.v = self.beta2 * self.v + (1 - self.beta2) * self.g ** 2
         self.w = self.w - self.m / (np.sqrt(self.v) + np.spacing(1))
 
-    # 根据小组当前位置计算更新基础信息，如当前小队适应度值、最佳适应度值、最佳位置、应用梯度方向、最佳梯度方向
-    # ，全局最佳适应度、最佳梯度方向、位置，以及参数w
     def updateSurface(self):
-        # 计算每组小队的适应度值
         self.y = np.array([fit_fun(self.model_param, self.x[i, :]) for i in range(self.size_pop)]).reshape(self.size_pop)
 
-        # 计算每组小队对当前位置存在猎物所估计的值(与参数w有关)
         self.p_y = np.sum(self.w * self.x, axis=1)
         self.err.append(np.abs(self.y - self.p_y).min())
 
-        # 计算每组小队的实际梯度(不是实际应用梯度)
         p = self.p_y - self.y
         p = self.refill(p)
         g_temp = p * self.x
 
-        # 根据每组小队的适应度值更新每组小队各自的最佳适应度
         mask = self.y < self.y_hist_best
         self.y_hist_best = np.where(mask, self.y, self.y_hist_best)
 
-        # 根据每组小队的适应度值更新每组小队各自的最佳位置和梯度
         mask = self.refill(mask)
         self.x_hist_best = np.where(mask, self.x, self.x_hist_best)
         self.g_hist_best = np.where(mask, g_temp, self.g_hist_best)
 
-        # 根据每组小队梯度计算其对应的梯度方向
         g_hist_sum = self.refill(np.sqrt((self.g_hist_best ** 2).sum(axis=1)))
         self.g_hist_best /= (g_hist_sum + np.spacing(1))
 
-        # 如果此时小队中有适应度小于全局最佳适应度的，则更新全局的最佳适应度、位置、梯度方向
         if self.y.min() < self.y_global_best:
             self.y_global_best = self.y.min()
             self.x_global_best = self.x[self.y.argmin(), :]
             self.g_global_best = g_temp[self.y.argmin(), :]
             self.g_global_best /= np.sqrt(np.sum(self.g_global_best ** 2))
 
-        # 更新每组小队的实际应用梯度方向
         self.gradientEstimate(g_temp)
 
-        # 更新w参数
         self.weightUpdate()
 
-    # 激进策略（白鹭B、白鹭C，即包含了随机和包围策略）
     def randomSearch(self):
 
         print("激进策略")
